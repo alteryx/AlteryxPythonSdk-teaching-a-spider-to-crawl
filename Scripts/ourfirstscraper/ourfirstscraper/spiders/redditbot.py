@@ -5,10 +5,19 @@ import scrapy
 class RedditbotSpider(scrapy.Spider):
     name = 'redditbot'
     allowed_domains = ['www.reddit.com/r/gameofthrones/']
-    start_urls = ['http://www.reddit.com/r/gameofthrones//']
+    start_urls = ['https://www.reddit.com/r/gameofthrones//']
+    handle_httpstatus_list = [404, 500]
 
     def parse(self, response):
-            #Extracting the content using css selectors
+        if response.status in (404, 500):
+            item = {}
+            item['url'] = response.url
+            item['meta'] = response.meta
+            item['status'] = response.status
+ 
+            yield item
+ 
+        else:
             titles = response.css('.title.may-blank::text').extract()
             votes = response.css('.score.unvoted::text').extract()
             times = response.css('time::attr(title)').extract()
