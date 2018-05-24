@@ -8,10 +8,22 @@ import xml.etree.ElementTree as Et
 import csv
 import os, sys
 npath = os.path.abspath(__file__)
-#sys.path.append(os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "ourfirstscraper"))
+sys.path.append(os.path.join(os.path.dirname(npath), "Patches"))
+#import run_patch
 
 import subprocess
+def RunPatch():
+    if os.path.exists(os.path.join(os.path.dirname(npath), "Patches", "PATCHED")):
+        return # only need to patch once and for all
+    proc = subprocess.Popen([os.path.join(os.path.dirname(npath), "Scripts", "python.exe")
+                      , os.path.join(os.path.dirname(npath), "Patches", "run_patch.py")]
+                      , creationflags=subprocess.CREATE_NEW_CONSOLE)
+    sout, serr = proc.communicate()
+    file = open(os.path.join(os.path.dirname(npath), "Patches", "PATCHED"), "w")
+    file.close()
+
 def LaunchProcess():
+    RunPatch()
     proc = subprocess.Popen([os.path.join(os.path.dirname(npath), "Scripts", "scrapy.exe")
                       , "runspider", "-s USER_AGENT=\"Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36\""
                       , "-o %s" % os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "reddit.csv")
