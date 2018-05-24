@@ -7,8 +7,17 @@ import AlteryxPythonSDK as Sdk
 import xml.etree.ElementTree as Et
 import csv
 import os, sys
-sys.path.append(r"C:\ProgramData\Alteryx\Tools\Python - Input")
-import foo
+npath = os.path.abspath(__file__)
+#sys.path.append(os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "ourfirstscraper"))
+
+import subprocess
+def LaunchProcess():
+    proc = subprocess.Popen([os.path.join(os.path.dirname(npath), "Scripts", "scrapy.exe")
+                      , "runspider", "-s USER_AGENT=\"Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36\""
+                      , "-o %s" % os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "reddit.csv")
+                      , os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "ourfirstscraper", "spiders", "redditbot.py")]
+                      , creationflags=subprocess.CREATE_NEW_CONSOLE)
+    sout, serr = proc.communicate()
 
 class AyxPlugin:
     """
@@ -42,15 +51,17 @@ class AyxPlugin:
         """
 
         # Getting the user-entered file name string from the GUI, and the output anchor from the XML file.
-        self.file_path = Et.fromstring(str_xml).find('browseFiles').text if 'browseFiles' in str_xml else ''
+        self.file_path = os.path.join(os.path.dirname(npath), "Scripts", "ourfirstscraper", "reddit.csv")
+        ##self.file_path = Et.fromstring(str_xml).find('browseFiles').text if 'browseFiles' in str_xml else ''
         self.output_anchor = self.output_anchor_mgr.get_output_anchor('Output')
+        self.alteryx_engine.output_message(self.n_tool_id, Sdk.EngineMessageType.info, self.xmsg(__file__))
 
         if not self.file_path:
             self.display_error_msg('Please specify a csv file')
         elif not self.is_csv(self.file_path):
             self.display_error_msg('This tool only accepts csv files')
-        elif not os.path.exists(self.file_path):
-            self.display_error_msg('No such file or directory: ' + self.file_path)
+        #elif not os.path.exists(self.file_path):
+        #    self.display_error_msg('No such file or directory: ' + self.file_path)
 
     def pi_add_incoming_connection(self, str_type: str, str_name: str) -> object:
         """
@@ -73,6 +84,12 @@ class AyxPlugin:
 
         return True
 
+    def crawl_spider(self):
+        # delete any previous results, otherwise it appends to any existing results
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
+        LaunchProcess()
+
     def pi_push_all_records(self, n_record_limit: int) -> bool:
         """
         Handles pushing records out to downstream tool(s).
@@ -86,6 +103,8 @@ class AyxPlugin:
 
         if self.alteryx_engine.get_init_var(self.n_tool_id, 'UpdateOnly') == 'True':
             return False
+        # crawl the spider
+        self.crawl_spider()
 
         file_reader, total_records = self.get_data(self.file_path)  # Reading in the target file.
         record_info_out = self.build_record_info_out(file_reader)  # Building out the outgoing record layout.
@@ -99,7 +118,7 @@ class AyxPlugin:
             out_record = record_creator.finalize_record()
             self.output_anchor.push_record(out_record, False)  # False: completed connections will automatically close.
             # Not the best way to let the downstream tool know of this tool's progress, normally one would use a timer.
-            if record[0] % round(total_records * .30, 0) == 0:
+            if record[0] % max(round(total_records * .30, 0), 1.0) == 0:
                 self.output_anchor.update_progress(record[0]/float(total_records))
             record_creator.reset()  # Resets the variable length data to 0 bytes (default) to prevent unexpected results.
 
