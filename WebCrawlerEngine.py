@@ -85,19 +85,8 @@ class AyxPlugin:
         #   output anchor from the XML file.
         self.file_path = os.path.join(
             os.path.dirname(npath), "Scripts", "ourfirstscraper", "reddit.csv")
-        ##self.file_path = Et.fromstring(str_xml).find('browseFiles').text if (
-        #   'browseFiles' in str_xml) else ''
         self.output_anchor = self.output_anchor_mgr.get_output_anchor('Output')
-        self.alteryx_engine.output_message(self.n_tool_id,
-            Sdk.EngineMessageType.info, self.xmsg(__file__))
-
-        if not self.file_path:
-            self.display_error_msg('Please specify a csv file')
-        elif not self.is_csv(self.file_path):
-            self.display_error_msg('This tool only accepts csv files')
-        #elif not os.path.exists(self.file_path):
-        #    self.display_error_msg('No such file or directory: '
-        #   + self.file_path)
+        self.is_initialized = True
 
     def pi_add_incoming_connection(self, str_type: str, str_name: str
             ) -> object:
@@ -154,7 +143,8 @@ class AyxPlugin:
         self.crawl_spider()
 
         # Reading in the target file.
-        file_reader, total_records = self.get_data(self.file_path)
+        file_reader, total_records = self.get_data(self.file_path, 
+                                                    n_record_limit)
         # Building out the outgoing record layout.
         record_info_out = self.build_record_info_out(file_reader)
         # Lets the downstream tools know of the outgoing record metadata.
@@ -163,9 +153,12 @@ class AyxPlugin:
         record_creator = record_info_out.construct_record_creator()
 
         for record in enumerate(file_reader):
-            for field in enumerate(record[1]):
-                record_info_out[field[0]].set_from_string(record_creator,
-                                                            field[1])
+            row_data = record[1]
+            for field in enumerate(row_data):
+                field_index = field[0]
+                field_data = field[1]
+                record_field = record_info_out[field_index]
+                record_field.set_from_string(record_creator, field_data)
             # Asking for a record to push downstream
             out_record = record_creator.finalize_record()
             # False: completed connections will automatically close.
@@ -181,7 +174,7 @@ class AyxPlugin:
 
         self.alteryx_engine.output_message(self.n_tool_id,
                                             Sdk.EngineMessageType.info,
-                                            self.xmsg(str(total_records))
+                                            str(total_records)
                                             + ' records were read from '
                                             + self.file_path)
         self.output_anchor.close()  # Close outgoing connections.
@@ -212,7 +205,7 @@ class AyxPlugin:
         return False
 
     @staticmethod
-    def get_data(file_path: str):
+    def get_data(file_path: str, n_record_limit: int):
         """
         A non-interface helper for pi_push_all_records() that prepares the csv
             file reader.
@@ -223,7 +216,8 @@ class AyxPlugin:
         file_object = open(file_path, 'r', encoding='utf-8')
         file_reader = csv.reader(file_object)
         # Disregard field names
-        total_records = sum(1 for record in file_object) - 1
+        total_records = min(sum(1 for record in file_object) - 1,
+                            n_record_limit)
         file_object.seek(0)
         return file_reader, total_records
 
