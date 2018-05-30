@@ -153,8 +153,9 @@ class AyxPlugin:
         record_creator = record_info_out.construct_record_creator()
 
         for record in enumerate(file_reader):
-            row_data = record[1]
-            for field in enumerate(row_data):
+            record_index = record[0]
+            record_data = record[1]
+            for field in enumerate(record_data):
                 field_index = field[0]
                 field_data = field[1]
                 record_field = record_info_out[field_index]
@@ -165,8 +166,8 @@ class AyxPlugin:
             self.output_anchor.push_record(out_record, False)
             # Not the best way to let the downstream tool know of this tool's
             #   progress, normally one would use a timer.
-            if record[0] % max(round(total_records * .30, 0), 1.0) == 0:
-                self.output_anchor.update_progress(record[0]
+            if record_index % max(round(total_records * .30, 0), 1.0) == 0:
+                self.output_anchor.update_progress(record_index
                                                     / float(total_records))
             # Resets the variable length data to 0 bytes (default) to prevent
             #   unexpected results.
