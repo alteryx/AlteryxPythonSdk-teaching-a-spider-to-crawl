@@ -1,0 +1,6 @@
+Scripts/ourfirstscraper/reddit.csv
+pip-selfcheck.json
+.vscode
+Patches/PATCHED
+Lib/*
+Scripts/*

@@ -8,6 +8,7 @@ import AlteryxPythonSDK as Sdk
 import xml.etree.ElementTree as Et
 import csv
 import os, sys
+from itertools import islice
 npath = os.path.abspath(__file__)
 sys.path.append(os.path.join(os.path.dirname(npath), "Patches"))
 #import run_patch
@@ -27,7 +28,7 @@ def RunPatch():
         os.path.dirname(npath), "Patches", "PATCHED"), "w")
     file.close()
 
-def LaunchProcess():
+def RunScrapyToGenerateCSV():
     RunPatch()
     proc = subprocess.Popen([os.path.join(
         os.path.dirname(npath), "Scripts", "scrapy.exe")
@@ -69,9 +70,9 @@ class AyxPlugin:
         self.output_anchor_mgr = output_anchor_mgr
 
         # Custom properties
-        self.file_path = ''
-        self.is_initialized = True
+        self.is_initialized = False
         self.output_anchor = None
+        self.file_path = None
 
     def pi_init(self, str_xml: str):
         """
@@ -83,10 +84,10 @@ class AyxPlugin:
 
         # Getting the user-entered file name string from the GUI, and the 
         #   output anchor from the XML file.
+        self.is_initialized = True
+        self.output_anchor = self.output_anchor_mgr.get_output_anchor('Output')
         self.file_path = os.path.join(
             os.path.dirname(npath), "Scripts", "ourfirstscraper", "reddit.csv")
-        self.output_anchor = self.output_anchor_mgr.get_output_anchor('Output')
-        self.is_initialized = True
 
     def pi_add_incoming_connection(self, str_type: str, str_name: str
             ) -> object:
@@ -121,7 +122,7 @@ class AyxPlugin:
         #   results
         if os.path.exists(self.file_path):
             os.remove(self.file_path)
-        LaunchProcess()
+        RunScrapyToGenerateCSV()
 
     def pi_push_all_records(self, n_record_limit: int) -> bool:
         """
@@ -139,6 +140,7 @@ class AyxPlugin:
         if (self.alteryx_engine.get_init_var(self.n_tool_id, 'UpdateOnly')
             == 'True'):
             return False
+
         # crawl the spider
         self.crawl_spider()
 
@@ -152,15 +154,11 @@ class AyxPlugin:
         # Creating a new record_creator for the new data.
         record_creator = record_info_out.construct_record_creator()
 
-        for record in enumerate(file_reader):
-            record_index = record[0]
-            record_data = record[1]
-            for field in enumerate(record_data):
-                field_index = field[0]
-                field_data = field[1]
+        for record_index, record_data in enumerate(file_reader):
+            for field_index, field_data in enumerate(record_data):
                 record_field = record_info_out[field_index]
                 record_field.set_from_string(record_creator, field_data)
-            # Asking for a record to push downstream
+            # Generate a record to push downstream
             out_record = record_creator.finalize_record()
             # False: completed connections will automatically close.
             self.output_anchor.push_record(out_record, False)
@@ -173,12 +171,15 @@ class AyxPlugin:
             #   unexpected results.
             record_creator.reset()
 
+        # Tell the Engine how many records this input tool read in
         self.alteryx_engine.output_message(self.n_tool_id,
                                             Sdk.EngineMessageType.info,
                                             str(total_records)
                                             + ' records were read from '
                                             + self.file_path)
-        self.output_anchor.close()  # Close outgoing connections.
+        
+        # Close outgoing connections.
+        self.output_anchor.close()
         return True
 
     def pi_close(self, b_has_errors: bool):
@@ -215,10 +216,12 @@ class AyxPlugin:
         """
 
         file_object = open(file_path, 'r', encoding='utf-8')
-        file_reader = csv.reader(file_object)
         # Disregard field names
         total_records = min(sum(1 for record in file_object) - 1,
                             n_record_limit)
+        file_reader = csv.reader(file_object)
+        if 0 < total_records:
+            file_reader = islice(file_reader, n_record_limit)
         file_object.seek(0)
         return file_reader, total_records
 
@@ -238,6 +241,8 @@ class AyxPlugin:
                                             0, 'File: ' + self.file_path, '')
         except UnicodeError:
             self.display_error_msg('Must be a UTF-8 file')
+        except StopIteration:
+            pass
         return record_info_out
 
     def display_error_msg(self, msg_string: str):

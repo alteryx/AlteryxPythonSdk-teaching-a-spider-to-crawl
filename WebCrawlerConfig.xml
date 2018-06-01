@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<!--
-  The name of this file must be the name of the plugin folder + "Config"
--->
+<!-- The name of this file must be the name of the plugin folder + "Config" -->
 <AlteryxJavaScriptPlugin>
-  <EngineSettings EngineDll="Python" EngineDllEntryPoint="WebCrawlerEngine.py" SDKVersion="10.1" />
-  <GuiSettings Html="WebCrawlerGui.html" Icon="WebCrawlerIcon.png" Help="https://help.alteryx.com/developer/current/index.htm#Python/Examples.htm" SDKVersion="10.1">
-    <InputConnections>
-    </InputConnections>
+  <EngineSettings EngineDll="Python" EngineDllEntryPoint="WebCrawlerEngine.py"
+                  SDKVersion="10.1" />
+  <GuiSettings Html="WebCrawlerGui.html" Icon="WebCrawlerIcon.png"
+                SDKVersion="10.1">
+    <InputConnections></InputConnections>
     <OutputConnections>
-      <Connection Name="Output" AllowMultiple="False" Optional="False" Type="Connection" Label=""/>
+      <Connection Name="Output" AllowMultiple="False" Optional="False"
+                  Type="Connection" Label=""/>
     </OutputConnections>
   </GuiSettings>
   <Properties>
