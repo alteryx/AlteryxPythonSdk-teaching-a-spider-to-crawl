@@ -1,29 +1,94 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html style="padding:20px">
 <head>
-  <meta charset="utf-8">
-  <title>Python - Input</title>
+    <meta charset="UTF-8">
+    <title>XMSG("HTML GUI SDK")</title>
+    <script type="text/javascript">
+     // Include the base GUI library.
+     document.write('<link rel="import" href="' + window.Alteryx.LibDir + '2/lib/includes.html">');
+    </script>
+    <style type="text/css">
+        body {
+            margin: 15px;
+        }
 
-	<script type="text/javascript">
-		document.write('<link rel="import" href="' + window.Alteryx.LibDir + '1/lib/alteryx/gui/includes.html">');
-	</script>
+        #widgetList {
+            padding-bottom: 20px;
+            font-family: "Segoe UI";
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 0 0;
+            padding: 0;
+        }
+
+        legend {
+            font-size: 18px;
+            font-weight: normal;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            border-top: 2px #ddd dotted;
+            padding: 10px 0px 5px 0px;
+            margin: 15px 5px 5px 4px;
+        }
+
+        h3 {
+            color: #9fa9ad;
+            font-size: 0.73rem;
+            margin: 6px 0px 3px 4px;
+            padding: 0;
+            font-weight: 700;
+            line-height: 1.42857143;
+        }
+
+            h3.container:first-child {
+                border-top: 0;
+            }
+
+        .flex-row {
+            margin: 0;
+            padding: 0;
+        }
+
+            .flex-row li {
+                list-style: none;
+            }
+    </style>
 </head>
 <body>
-	<form>
-    <fieldset>
-        <legend>XMSG("File Browse")</legend>
-        <label>XMSG("Enter a UTF-8 CSV file")</label>
-        <alteryx-pluginwidget data-props='{type:"FileBrowse", id:"FileBrowse", dataName:"browseFiles", browseType: "File", isWorkflowDependency: true}' ></alteryx-pluginwidget>
-    </fieldset>
-	</form>
+    <h1>XMSG("Teach A Spider To Crawl")</h1>
+    <article id="widgetList">
+        <section>
+            <h2>XMSG("Select Spider")</h2>
+            <ayx data-ui-props='{type:"DropDown", widgetId:"DropDown1"}'></ayx>
+        </section>
+    </article>
+    <script type="text/javascript">
 
-  <style>
-    /*This styling needs to be here. Is due to file loading. Otherwise, will not get proper styling on dropdowns*/
+      Alteryx.Gui.BeforeLoad = function (manager, AlteryxDataItems, json) {
 
-    .Select, .Select div, .Select input, .Select span {
-      box-sizing: content-box;
-      -webkit-box-sizing: content-box;
-    }
-  </style>
+ 
+        // Drop Down
+        // ---------
+        var stringSelector = new AlteryxDataItems.StringSelector('DropDownStringSelector1', {
+          optionList: [
+            { label: 'XMSG("doubanmovie")', value: "doubanmovie" },
+            { label: 'XMSG("redditbot")', value: "redditbot" },
+            { label: 'XMSG("youtubetrending")', value: "youtubetrending" }
+          ]
+        })
+        manager.addDataItem(stringSelector)
+        manager.bindDataItemToWidget(stringSelector, 'DropDown1') // Bind to widget
+      }
+
+      Alteryx.Gui.AfterLoad = function (manager) {
+        // Set the value of the progress bar
+        //manager.getDataItem('Progress').setValue(75)
+      }
+    </script>
 </body>
 </html>
