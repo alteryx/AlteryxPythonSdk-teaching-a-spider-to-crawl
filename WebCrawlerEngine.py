@@ -84,8 +84,7 @@ class AyxPlugin:
 
         # Getting the user-entered file name string from the GUI, and the 
         #   output anchor from the XML file.
-        self.spider_name = Et.fromstring(str_xml).find('WhichSpider').text if
-                                        'WhichSpider' in str_xml else None
+        self.spider_name = Et.fromstring(str_xml).find('WhichSpider').text if 'WhichSpider' in str_xml else None
         self.output_anchor = self.output_anchor_mgr.get_output_anchor('Output')
         self.is_initialized = True
         self.file_path = os.path.join(
